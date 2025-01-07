@@ -1,21 +1,23 @@
 import configparser
 from backtester import Backtester
-from trading_strategy import GridBotStrategy, TrendFollowingStrategy
-from bybit_api import BybitAPI  # Ensure you have BybitAPI or remove if not used
-
-
+from trading_strategy import *
 def load_config():
+    """
+    Loads configuration from the 'config.ini' file.
+    """
     config = configparser.ConfigParser()
     config.read('config.ini')
     return config
 
+
 def main():
+
     config = load_config()
     bybit_config = config['bybit']
-    api = BybitAPI(bybit_config['api_key'], bybit_config['api_secret'])
+#    api = BybitAPI(bybit_config['api_key'], bybit_config['api_secret'])
 
     # Initialize the backtester with live trading enabled
-    backtester = Backtester(live=True, api=api, symbol="BTCUSDT")
+    backtester = Backtester(live=True)
 
     # Initialize the bank account
     bank_account = backtester.bank_account
@@ -29,8 +31,7 @@ def main():
     # Run backtesting or live trading
     backtester.run(strategy)
     backtester.print_logs()
-    # Export logs to a CSV file
-    backtester.bank_account.export_logs_to_csv('backtester_logs.csv')
 
 if __name__ == '__main__':
     main()
+

@@ -26,6 +26,46 @@ class TrendFollowingStrategy:
         self.bank_account = bank_account
         self.prices = []
 
+    def detect_trend(self, prices):
+        """
+        Detects the trend based on moving average, RSI, and price movement.
+        Args:
+            prices: A Pandas Series or list of prices to calculate trend from.
+        Returns:
+            'growing', 'falling', or 'stable'
+        """
+        if len(prices) < self.moving_average_period:
+            return "stable"  # Not enough data to determine trend
+        
+        moving_average = prices[-self.moving_average_period:].mean()
+        current_price = prices.iloc[-1]
+        previous_price = prices.iloc[-2] if len(prices) > 1 else current_price
+    
+        # RSI Calculation
+        deltas = prices.diff()
+        gains = deltas.where(deltas > 0, 0).rolling(window=self.rsi_period).mean()
+        losses = -deltas.where(deltas < 0, 0).rolling(window=self.rsi_period).mean()
+        rs = gains / losses
+        rsi = 100 - (100 / (1 + rs.iloc[-1])) if not rs.iloc[-1] is None else None
+    
+        if moving_average is None or rsi is None:
+            return "stable"
+    
+        # Trend decision based on RSI
+        if rsi < self.rsi_oversold:
+            return "falling"  # Oversold conditions
+        elif rsi > self.rsi_overbought:
+            return "growing"  # Overbought conditions
+    
+        # Additional check for price movement relative to moving average
+        if current_price > moving_average and previous_price <= moving_average:
+            return "growing"
+        elif current_price < moving_average and previous_price >= moving_average:
+            return "falling"
+    
+        # Default case
+        return "stable"
+        
     def calculate_moving_average(self):
         if len(self.prices) < self.moving_average_period:
             return None
@@ -58,8 +98,13 @@ class TrendFollowingStrategy:
             return
 
         if current_price > moving_average and rsi < self.rsi_oversold:
-            self.bank_account.buy("BTCUSDT", current_price, 1)
-            print(f"TrendFollowing: Bought at {current_price}")
-        elif current_price < moving_average and rsi > self.rsi_overbought:
+           # self.bank_account.buy("BTCUSDT", current_price, 1)
+           # print(f"TrendFollowing: Bought at {current_price}")
             self.bank_account.sell("BTCUSDT", current_price, 1)
             print(f"TrendFollowing: Sold at {current_price}")
+        elif current_price < moving_average and rsi > self.rsi_overbought:
+           # self.bank_account.sell("BTCUSDT", current_price, 1)
+           # print(f"TrendFollowing: Sold at {current_price}")
+            self.bank_account.buy("BTCUSDT", current_price, 1)
+            print(f"TrendFollowing: Bought at {current_price}")
+

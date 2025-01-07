@@ -20,9 +20,9 @@ def open_file(filename):
         df = pd.read_csv(filename)
     return df
 
-def init_session(symbol="BTCUSD", interval=1, limit=5):
+def init_session(symbol="BTCUSD", interval=1, limit=2000):
     _ = session.get_kline(
-            category = "inverse",
+            category = "linear",
             symbol = symbol,
             interval = interval,
             limit = limit
@@ -43,7 +43,7 @@ def get_new_data(df, data):
     return None, 0
 
 if __name__ == "__main__":
-    filename = "realtime_data.csv"
+    filename = "realtime_data_1min.csv"
     df = open_file(filename)
     data_list = init_session()["result"]["list"]
 
