@@ -1,7 +1,10 @@
+from pybit.unified_trading import HTTP
+
 class BankAccount:
     def __init__(self, initial_balance=1000.0):
         self.cash = initial_balance
         self.assets = {}
+        self.market_prices = {}
 
     def buy(self, symbol, price, quantity):
         cost = price * quantity
@@ -19,13 +22,14 @@ class BankAccount:
             self.assets[symbol] -= quantity
             if self.assets[symbol] == 0:
                 del self.assets[symbol]
+            self.market_prices[symbol] = price
             return True
         else:
             print("Insufficient assets to sell")
             return False
 
-    def get_total_value(self, market_prices):
-        total_assets_value = sum(market_prices.get(symbol, 0) * quantity for symbol, quantity in self.assets.items())
+    def get_total_value(self, ):
+        total_assets_value = sum(self.market_prices.get(symbol, 0) * quantity for symbol, quantity in self.assets.items())
         return self.cash + total_assets_value
 
     def export_logs_to_csv(self, file_path):

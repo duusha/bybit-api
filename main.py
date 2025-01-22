@@ -6,6 +6,8 @@ import pandas as pd
 import os
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+import logging
+from test_sock import webSoc
 
 def get_data(filename, starting_balance):
     data = pd.read_csv(filename)
@@ -20,6 +22,7 @@ def load_config():
     config = configparser.ConfigParser()
     config.read('config.ini')
     return config
+
 
 def build_graph(config, data, graph_path):
     # Plot the data with signals
@@ -44,7 +47,7 @@ def build_graph(config, data, graph_path):
     plt.grid()
     plt.savefig(graph_path)
 
-def analyze_data(data, trend_strategy, bank_account, symbol):
+def analyze_data(data, trend_strategy, bank_account, symbol, logger):
     for i, row in data.iterrows():
         trend_strategy.execute({'price': row['Close']})
         trend = trend_strategy.detect_trend(data["Close"][:i+1])
@@ -55,14 +58,14 @@ def analyze_data(data, trend_strategy, bank_account, symbol):
             price = row["Close"] ### change to realtime spotdata
             quantity = buy_amount / price
             bank_account.buy(symbol, price, quantity)
-            print(f"Buy executed: {quantity} units at {price}")
+            logger.info(f"Buy executed: {quantity} units at {price}")
 
         elif trend == "growing" and bank_account.assets.get(symbol, 0) > 0:
             sell_quantity = bank_account.assets.get(symbol, 0) * 0.5  # Sell 50% of held quantity
             price = row["Close"] # change to realtime data
             sell_amount = sell_quantity * price
             bank_account.sell(symbol, price, sell_quantity)
-            print(f"Sell executed: {sell_quantity} units at {price}")
+            logger.info(f"Sell executed: {sell_quantity} units at {price}")
 
 
         # Log balance after each iteration
@@ -101,6 +104,16 @@ def create_get_graph_path(config):
 #    assert False
 
 
+def init_logger(config, filename):
+    log_path = config["logger"]["log_path"]
+    if not os.path.isdir(log_path):
+        os.mkdir(log_path)
+    logging.basicConfig(filename=os.path.join(log_path, filename),
+                    format='%(asctime)s %(message)s',
+                    filemode='w')
+    logger = logging.getLogger()
+    return logger 
+
 
 def test(config):
 
@@ -110,20 +123,29 @@ def test(config):
     symbol = config["general"]["symbol"]
     session = init_session()
     n_batch = int(config["data"]["number_of_1000s"])
+    logger = init_logger(config, "test_1_min.log")
     ### func to collect data
     #batch_data(session, symbol,paths["min_1"], n_batch)
     #func to convert all files to one
     #concate_by_wind(paths["min_1"]) ### TODO to test on big data
+    results = pd.DataFrame(columns=["filename", "bankAccount", "heldQuality", "totalIncome"])
     for i in tqdm(range(n_batch), leave=True):
         bank_account = BankAccount(starting_balance) ### update to real bank account data for real data
         trend_strategy = TrendFollowingStrategy(config['trend_following'], bank_account)
         filepath = os.path.join(paths["min_1"], f"1min_{i}.csv")
         df = pd.read_csv(filepath)
-        analyze_data(df, trend_strategy, bank_account, symbol)
+        analyze_data(df, trend_strategy, bank_account, symbol, logger)
         build_graph(config, df, os.path.join(graph_paths["min_1"], graph_paths["min_1"].split("/")[-1] + f"_{i}.png"))
+        res_row = [filepath, bank_account.cash, bank_account.assets[symbol], (bank_account.get_total_value() - starting_balance) / starting_balance * 100]
+        results.loc[len(results)] = res_row
+        results.to_csv("results.csv")
+
+def realtime_test(config):
+    websock = webSoc(config)
+    websock.kline_stream()
 
 
 if __name__ == "__main__":
     config = load_config()
     if config["general"]["test"]:
-        test(config)
+        realtime_test(config)
