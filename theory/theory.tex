@@ -1,0 +1,152 @@
+\documentclass[12pt]{article}
+
+% Encoding and font packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}  % Improved font quality
+
+% Useful packages
+\usepackage{amsmath, amssymb} % For math symbols and equations
+\usepackage{graphicx}         % For including images
+\usepackage{hyperref}         % For clickable links in the PDF
+\usepackage{lipsum}           % For dummy text (lorem ipsum)
+
+% Title, Author, and Date
+\title{Trafing strategies theory}
+\author{Andrei Nekliudov}
+\date{\today}
+
+\begin{document}
+	
+	\maketitle
+	
+	\section{Financial Forecasting And Trading Strategies}
+	\subsection{MA}
+		Moving Average rules (MAs) are also common mechanical indicators and their applications are
+		known for many decades in trading decisions and systems. In simple words, a MA is the mean of a
+		time series, which is recalculated every trading day. Their main characteristic is the length window,
+		namely the number of trading days that are going to be used to calculate the rolling mean of the
+		high frequency data. MAs are identifiers of short- or long-term trends, so the window length can be
+		short (short MAs – 1 to 5 lags) or long (long MAs- 10 to 100 lags). The intuition behind them isthat buy (sell) signals are triggered when closing prices cross above (below) the x day MA. Another
+		variation is to buy (sell) when x day MA crosses above (below) the y day MA.
+		
+		Assuming that the length window is n days, the current period’s t closing price $P_t$, MAs can be
+		further divided into three main categories
+		
+		\begin{itemize}
+			\item Simple MA (SMA): $SMA_{t+1} = \frac{P_t + P_{t-1} + ... + P_{t-n + 1}}{n}$
+			
+			\item Exponential MA(EMA): $EMA_{t+1} = EMA_t + \alpha(P_t - EMA_t)$
+			
+			\item Weighted MA (WMA): $WMA_{t + 1} = \frac{nP_t + (n-1)P_{t - 1} + ... + 2P_{t - n + 2} + P_{t-n+1}}{n(n + 1) / 2}$
+		\end{itemize}
+	
+	The SMA is an average of values recalculated every day. The EMA is adapting to the market price
+	changes by smoothing constant parameter α. The smoothing parameter expresses how quickly the
+	EMA reacts to price changes. If α is low, then there is little reaction to price differences and vice
+	versa. The WMA give weights to the prices used a lags. These weights are higher in recent periods,
+	giving higher importance in recent closing prices. All these MAs are using the closing price as the
+	calculation parameter, but open, high and low prices could also be used.
+	\subsection{Oscillators(OTs) and Momentum Rules(MTs)}
+	The third class of mechanical trading rules consists of the Oscillators (OTs) and Momentum Rules
+	(MTs). OTs are techniques that do not follow the trend. Actually, they try to identify when the trend
+	is apparent for too long or ‘dying’. Therefore they are also called ‘non-trending market indicators’.
+	The main drawback of MAs is the inability to identify the quick and violent swifts in price
+	direction, which lead to capital loss by generating wrong trading signals. This performance gap is
+	filled from OT indices. Their basic intuition is that a reversal trend is eminent, when the prices
+	move away from the average. Simple OT rules are based on the difference between two MAs and
+	generate buy (sell) signals when prices are too low (have risen extremely). Nonetheless, being a
+	difference of MA rules, OTs can also present buy and sell position, when the index crosses zero.
+	The boundaries between OTs and MTs can be a bit vague depending on the case, because MTs can
+	be applied to MAs and OTs. The main difference is that OTs are non-trend indicators, whereas MTs
+	are capitalizing on the endurance of a trend in the market. A simple MT rule would be the
+	difference between today’s closing price and the closing price of x days ago. The trading signal is
+	generated based on this momentum. To put it simply, the buy (sell) signal is given when today’s
+	closing price is higher than the closing price x days ago. Setting properly the x day’s price that is
+	going to be used is also a matter of trader intuition, market knowledge and historical experience (5
+	and 20 days are common).There are many types of OTs and MTs used in trading applications. Some typical examples are
+	summarized, interpreted in short and followed by relevant research applications below:
+	
+	\begin{itemize}
+		\item Moving Average Convergence/Divergence (MACD):
+		MACD is calculated as the
+		difference between short- and long-term EMAs and identifies where crossovers and
+		diverging trends to generate buy and sell signals.
+		\item Accumulation/Distribution (A/D): A/D is a momentum indicator which measures if
+		investors are generally buying (accumulation) or selling (distribution) base on the volume
+		of price movement.
+		\item Chaikin Oscillator (CHO): CHO is calculated as the MACD of A/D.
+		
+		\item Relative Strength Index ( SI): The SI is calculated based on the average ‘up’ moves and
+		average ‘down’ moves and is used to identify overbought (when its value is over 70 – sell
+		signal) or oversold (when its value is under 30-buy)
+		
+		\item Price Oscillator (PO): PO is identifying the momentum between two EMAs.
+		
+		\item Detrended Price Oscillator (DPO): DPO eliminates long-term trends in order to easier
+		identify cycles and measures the difference between closing price and SMA.
+		
+		\item Bollinger bands (BB): BB are based on the difference of closing prices and SMAs and
+		determine if securities are overbought or oversold.
+		
+		\item Stochastic Oscillator (SO): SO is based on the assumptions that as prices rise, the closing
+		price tends to reach the high prices in the previous period.
+		
+		\item Triple EMA (TRIX): TRIX is a momentum indicator between three EMAs and triggers
+		buying and selling signals base on zero crossovers.
+	\end{itemize}
+	The exact specifications and formulas of the abovementioned indicators can be found in Gifford
+	(1995), Chang et al. (1996) and Edwards and Magee (1997) or in any common textbook of
+	technical analysis. Their utility though has been eminent years before that. The pioneering paper of
+	Brock et al. (1992) presents evidence of profitability of MACD, as for MAs and FRs mentioned
+	above. Kim and Han (2000) propose a hybrid genetic algorithm – neural network model that uses
+	OTs, such as PO, SO, A/D and RSI, along with simple momentum rules to predict the stock market.
+	Leung and Chong (2003) compare the profitability of MA envelopes and BBs. Their results suggest
+	BBs do not outperform the MA envelopes, despite being able to capture sudden price fluctuations.
+	Shen and Loh (2004) propose a trading system with rough sets to forecast S&P 500 index, which
+	outperforms BH rules. In order to set up this hybrid trading system, they search for the most
+	efficient rules based on the historical data from a pool of technical indicator, such as MACD, RSI
+	and SO. Lento et al. (2007) also present empirical evidence that prove BBs’ inability to achieve
+	higher profits compared to a BH strategy, when tested on tested on the S&P/TSX 300 Index, the
+	Dow Jones Industrial Average Index, NASDAQ Composite Index and the Canada/USD exchange
+	rate. Chong and Ng (2008) examine the profitability of MACD and RSI using 60-year data of the
+	London Stock Exchange and found that the RSI as well as the MACD rules can generate returns
+	higher than the BH strategy in most cases.
+
+
+	
+	\section{Introduction}
+	This document serves as a sample for a \LaTeX\ file in TeXstudio. LaTeX is a powerful typesetting system widely used for creating scientific documents, articles, reports, and more.
+	
+	\section{Basic Elements}
+	Below are some common elements used in a LaTeX document.
+	
+	\subsection{Text and Paragraphs}
+	LaTeX automatically handles spacing between paragraphs. For example:
+	
+	\lipsum[1] % Generates a paragraph of Lorem Ipsum text.
+	
+	\subsection{Mathematical Equations}
+	LaTeX excels at typesetting mathematics. Here is an example of an inline equation: \( E = mc^2 \). And here is a displayed equation:
+	
+	\[
+	\int_{a}^{b} f(x) \, dx = F(b) - F(a)
+	\]
+	
+	\subsection{Including Graphics}
+	You can include images using the \texttt{graphicx} package. For example:
+	
+	\begin{figure}[h!]
+		\centering
+		\includegraphics[width=0.5\textwidth]{example-image} % Ensure you have a file named "example-image.pdf/jpg/png" in your project directory
+		\caption{Sample Image}
+		\label{fig:sample}
+	\end{figure}
+	
+	\subsection{Hyperlinks}
+	The \texttt{hyperref} package makes it easy to add hyperlinks. For example, visit the \href{https://www.latex-project.org/}{LaTeX Project website}.
+	
+	\section{Conclusion}
+	This sample document provides a basic framework for creating documents in LaTeX with TeXstudio. From here, you can expand your document with more sections, figures, tables, and custom formatting as needed.
+	
+\end{document}
