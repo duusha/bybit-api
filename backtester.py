@@ -11,9 +11,10 @@ class BankAccount:
         if self.cash >= cost:
             self.cash -= cost
             self.assets[symbol] = self.assets.get(symbol, 0) + quantity
+            logging.info(f"BUY: {quantity} {symbol} at {price}, cost: {cost}, remaining cash: {self.cash}")
             return True
         else:
-            print("Insufficient cash to buy")
+            logging.error(f"Insufficient cash to buy {quantity} {symbol} at {price}")
             return False
 
     def sell(self, symbol, price, quantity):
