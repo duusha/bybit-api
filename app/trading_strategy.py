@@ -79,7 +79,7 @@ class TrendFollowingStrategy:
         # Calculate Indicators
         moving_average = self.calculate_moving_average()
         rsi = self.calculate_rsi()
-        logging.info(f"MA:{moving_average} RSI: {rsi} Prices: {self.prices}")
+        logging.info(f"MA:{moving_average} RSI: {rsi} Prices: {self.prices[-5:]}")
 
         # Ensure enough data is available
         if moving_average is None or rsi is None:
@@ -89,22 +89,29 @@ class TrendFollowingStrategy:
         buy_allocation = 0.1  # 10% of available cash
         sell_allocation = 0.5  # 50% of held assets
         min_buy_amount = 50  # Minimum buy amount in USD
+        #buy_cond = rsi < self.rsi_oversold and current_price > moving_average and self.bank_account.cash > 0
+        #sell_cond = rsi > self.rsi_overbought and current_price < moving_average and self.bank_account.cash > 0
 
         # **Buy Condition**
+        #logging.info(f"______________________\nrsi: {rsi}, rsi_oversold: {self.rsi_oversold}, rsi_overbought: {self.rsi_overbought}, current_price: {current_price}, MA: {moving_average}, bank_acc: {self.bank_account.cash}\n_____________________________")
+        #logging.info(f"Buy Condition: rsi< rsi_oversold, price > ma, Status:{buy_cond} \n _____________________________")
+        #logging.info(f"Sell Condition: rsi > rsi_overbought, price < ma, Status:{sell_cond} \n _____________________________")
+  #      logging.info("Sell Condition: rsi > rsi_overbought, price < ma \n _____________________________")
         if rsi < self.rsi_oversold and current_price > moving_average and self.bank_account.cash > 0:
             buy_amount = self.bank_account.cash * buy_allocation
             if buy_amount < min_buy_amount:
+                logging.info(f"buy_amount = {buy_amount} and minimum buy amount = {min_buy_amount}")
                 return None  # Skip small trades
 
             quantity = buy_amount / current_price
             self.bank_account.buy("BTCUSDT", current_price, quantity)
-            return {"type": "buy", "price": current_price, "quantity": quantity}
+            return {"type": "buy", "price": current_price, "quantity": quantity, "status": "open"}
 
         # **Sell Condition**
         elif rsi > self.rsi_overbought and current_price < moving_average and self.bank_account.assets.get("BTCUSDT", 0) > 0:
             sell_quantity = self.bank_account.assets.get("BTCUSDT", 0) * sell_allocation
             self.bank_account.sell("BTCUSDT", current_price, sell_quantity)
-            return {"type": "sell", "price": current_price, "quantity": sell_quantity}
+            return {"type": "sell", "price": current_price, "quantity": sell_quantity, "status": "open"}
 
         return None  # No trade executed
 

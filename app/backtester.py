@@ -1,5 +1,5 @@
 from pybit.unified_trading import HTTP
-
+import logging
 class BankAccount:
     def __init__(self, initial_balance=1000.0):
         self.cash = initial_balance

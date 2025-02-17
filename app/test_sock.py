@@ -1,13 +1,28 @@
-from pybit.unified_trading import WebSocket
-from time import sleep
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
 import logging
+from time import sleep
 from backtester import BankAccount
 from trading_strategy import TrendFollowingStrategy
 
-logging.basicConfig(level=logging.INFO)
+import logging
+import os
+
+# Создаем папку logs, если её нет
+log_dir = "logs"
+if not os.path.exists(log_dir):
+    os.makedirs(log_dir)
+
+# Настраиваем логгер
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler(os.path.join(log_dir, "app.log")),
+        logging.StreamHandler()
+    ]
+)
 
 class WebSoc:
     def __init__(self, config):
@@ -18,6 +33,7 @@ class WebSoc:
         self.graph_path = "graphs/orders_1min"
         os.makedirs(self.graph_path, exist_ok=True)
         self.strategy = TrendFollowingStrategy(config["trend_following"], self.bank_account)
+        self.local_test = config.get("local_test", False)  # New local test flag
 
     def handle_message(self, message):
         """Handles incoming WebSocket messages, processes only confirmed candles."""
@@ -27,15 +43,11 @@ class WebSoc:
                 return
 
             kline_data = message["data"][0]
-
-            # Ensure necessary fields exist
             required_fields = ["start", "end", "open", "close", "high", "low", "volume", "confirm"]
             if not all(field in kline_data for field in required_fields):
                 logging.error(f"Malformed WebSocket message: {kline_data}")
                 return
 
-
-            # Process confirmed data
             new_data = {
                 "start": kline_data["start"],
                 "end": kline_data["end"],
@@ -45,31 +57,25 @@ class WebSoc:
                 "low": float(kline_data["low"]),
                 "volume": float(kline_data["volume"]),
             }
+            self.df.loc[len(self.df)] = new_data
 
-            self.df.loc[len(self.df)] = new_data  # Append only confirmed data
-
-            # Pass only the 'close' price as market data
             market_data = {"price": new_data["close"]}
             if kline_data["confirm"]:
-                # Check if any existing orders should be executed
                 order_filled = self.check_orders(market_data)
                 if order_filled:
                     self.plot_graph()
-
-                # Execute strategy and place new orders
                 order = self.place_orders(market_data)
-
-
                 if order:
                     self.plot_graph()
 
         except Exception as e:
             logging.error(f"Error handling message: {e}")
+            assert False
 
     def place_orders(self, market_data):
         """Executes strategy and places new buy/sell orders."""
         order = self.strategy.execute(market_data)
-        if order:
+        if order and not any(o['price'] == order['price'] and o['type'] == order['type'] for o in self.orders):
             self.orders.append(order)
             logging.info(f"Order Placed: {order['type']} at {order['price']}")
             return order
@@ -110,10 +116,62 @@ class WebSoc:
         plt.savefig(graph_filename)
         plt.close()
 
+    def simulate_test_data(self):
+        """Simulate market data for local testing focused on order execution."""
+        logging.info("Running in local test mode...")
+
+        # Simulated price trend: Starts at 100 and gradually increases/decreases
+        base_price = 100
+        test_data = []
+
+        for i in range(30):
+            # Alternate between rising and falling patterns every 10 candles
+            if i < 10:
+                # Simulate a downtrend to create oversold conditions (for buy signals)
+                close_price = base_price - i
+            elif i < 20:
+                # Simulate an uptrend to create overbought conditions (for sell signals)
+                close_price = base_price - 10 + (i - 10) * 2
+            else:
+                # Sideways market to test stable signals
+                close_price = 100 + (i % 2) * 2
+
+            open_price = close_price - 1
+            high_price = close_price + 2
+            low_price = close_price - 2
+            volume = 1000 + i * 100
+
+            test_data.append({
+                "start": i * 60,
+                "end": (i + 1) * 60,
+                "open": round(open_price, 2),
+                "close": round(close_price, 2),
+                "high": round(high_price, 2),
+                "low": round(low_price, 2),
+                "volume": volume,
+                "confirm": True
+            })
+
+            base_price = close_price
+
+        # Feed test data into the system
+        for msg in test_data:
+            logging.info(f"TEST DATA: Processing candle with close price: {msg['close']}")
+            self.handle_message({"data": [msg]})
+            sleep(0.5)
+
+        logging.info(f"Final Bank Account: {self.bank_account}")
+        logging.info(f"Final Open Orders: {self.orders}")
+
     def start_stream(self):
-        """Starts the WebSocket stream and manages reconnections."""
+        """Starts the WebSocket stream or local test."""
+        if self.local_test:
+            self.simulate_test_data()
+            return
+
         while True:
             try:
+                from pybit.unified_trading import WebSocket
                 logging.info("Connecting to WebSocket...")
                 self.ws = WebSocket(testnet=False, channel_type="linear")
                 self.ws.kline_stream(interval=1, symbol="BTCUSDT", callback=self.handle_message)
@@ -124,8 +182,19 @@ class WebSoc:
                 logging.error(f"WebSocket error: {e}")
                 logging.info("Restarting WebSocket connection...")
                 sleep(5)
+
+
 if __name__ == "__main__":
-    config = {"trend_following": {"moving_average_period": 14, "rsi_period": 14, "rsi_overbought": 70, "rsi_oversold": 30}}
+    config = {
+        "trend_following": {
+            "moving_average_period": 14,
+            "rsi_period": 14,
+            "rsi_overbought": 70,
+            "rsi_oversold": 30
+        },
+        "local_test": False  # Set this to False for live mode
+    }
+
     ws = WebSoc(config)
     ws.start_stream()
 
